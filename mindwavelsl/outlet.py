@@ -1,9 +1,10 @@
-import collections
-import json
 import numpy as np
 import os
-import pylsl as lsl
 import uuid
+
+import numpy as np
+import pylsl as lsl
+from pylsl import pylsl
 
 from mindwavelsl.connectors import TelnetConnector, MindwavePythonWrapper
 from mindwavelsl.constants import (
@@ -245,7 +246,7 @@ class MindwaveLSL(object):
 				sample = self.make_sample(response)
 
 				for outlet in self.outlets:
-					outlet.push_sample(sample)
+					outlet.push_sample(sample, timestamp=pylsl.local_clock())
 			except KeyboardInterrupt as e:
 				raise e	
 			except Exception as e:
@@ -290,12 +291,12 @@ class FileOutlet(object):
 		self._header = []
 		self._filehandler = None
 
-	def _sample_to_csv(self, sample):
+	def _sample_to_csv(self, sample, timestamp=None):
 		"""
 		Converts a sample to a CSV entry.
 		:param list sample: Sample to convert.
 		"""
-		return ",".join([str(s) for s in sample])
+		return ",".join([str(s) for s in (([timestamp] if timestamp else []) + sample)])
 
 	def _make_dirs(self):
 		"""
@@ -312,7 +313,7 @@ class FileOutlet(object):
 		Sets up the CSV file header.
 		:param list header: Header for each of the data columns.
 		"""
-		self._header = header
+		self._header = ["timestamp"] + header
 
 	def setup_outlet(self):
 		"""
@@ -326,9 +327,9 @@ class FileOutlet(object):
 		self._filehandler = open(os.path.join(self.path, self.file), "a", 5)
 		self.push_sample(self._header)
 
-	def push_sample(self, sample):
+	def push_sample(self, sample, timestamp=None):
 		"""
 		Push a sample that conforms to the given header.
 		:param list sample: Data sample to write.
 		"""
-		self._filehandler.write(self._sample_to_csv(sample) + "\n")
+		self._filehandler.write(self._sample_to_csv(sample, timestamp=timestamp) + "\n")

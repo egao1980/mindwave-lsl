@@ -1,6 +1,7 @@
 import collections
 import json
 from telnetlib import Telnet
+import numpy as np
 
 try:
 	import mindwavelsl.vendor.mindwave as mindwave
